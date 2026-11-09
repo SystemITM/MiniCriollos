@@ -1,0 +1,32 @@
+# Dependencias de Node.js
+node_modules/
+
+# Archivos compilados
+dist/
+build/
+
+# Resultados de pruebas
+coverage/
+
+# Variables de entorno y credenciales
+.env
+.env.*
+!.env.example
+
+# Archivos de registro
+*.log
+npm-debug.log*
+
+# Archivos temporales de Windows
+Thumbs.db
+Desktop.ini
+
+# Archivos del sistema macOS
+.DS_Store
+
+# Configuraciones locales del editor
+.vscode/
+
+# Archivos temporales
+*.tmp
+*.temp
