@@ -30,6 +30,7 @@ const pool = new Pool({
   user: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
   database: process.env.POSTGRES_DB,
+  options: '-c timezone=America/Bogota',
   max: 5,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000

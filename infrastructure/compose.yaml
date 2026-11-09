@@ -2,25 +2,87 @@ services:
   postgres:
     image: postgres:17
     container_name: minicriollos-postgres
-
     restart: unless-stopped
-
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-
+    env_file: .env
     ports:
       - "127.0.0.1:5432:5432"
-
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 5s
       timeout: 5s
+      retries: 15
+
+  inventory-service:
+    build: ../services/inventory-service
+    container_name: minicriollos-inventory
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_HOST: postgres
+      PORT: 3001
+      DEMO_SEED: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
       retries: 10
+
+  sales-service:
+    build: ../services/sales-service
+    container_name: minicriollos-sales
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_HOST: postgres
+      PORT: 3002
+      IVA_RATE: ${IVA_RATE:-0.19}
+    depends_on:
+      inventory-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3002/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  reports-service:
+    build: ../services/reports-service
+    container_name: minicriollos-reports
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_HOST: postgres
+      PORT: 3003
+    depends_on:
+      sales-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3003/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        VITE_IVA_RATE: ${IVA_RATE:-0.19}
+    container_name: minicriollos-frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5173:80"
+    depends_on:
+      inventory-service:
+        condition: service_healthy
+      sales-service:
+        condition: service_healthy
+      reports-service:
+        condition: service_healthy
 
 volumes:
   postgres_data:

@@ -5,6 +5,11 @@ CREATE TABLE IF NOT EXISTS productos (
 
     nombre VARCHAR(150) NOT NULL,
 
+    categoria VARCHAR(80) NOT NULL DEFAULT 'General',
+
+    precio_compra NUMERIC(12,2) NOT NULL DEFAULT 0
+        CHECK (precio_compra >= 0),
+
     precio NUMERIC(12,2) NOT NULL
         CHECK (precio >= 0),
 
@@ -20,3 +25,7 @@ CREATE TABLE IF NOT EXISTS productos (
 
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS idx_productos_nombre ON productos (LOWER(nombre));
+
+CREATE INDEX IF NOT EXISTS idx_productos_vencimiento ON productos (fecha_vencimiento);
